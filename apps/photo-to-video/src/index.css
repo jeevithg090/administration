@@ -1,5 +1,65 @@
+/*
+ * Design tokens. Every colour, size and radius used by the app comes from here,
+ * so light and dark themes only need to redefine the colour tokens.
+ */
 :root {
+  /* Spacing scale (4 px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* Type scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: clamp(1.75rem, 1.3rem + 2vw, 2.5rem);
+
+  --radius-sm: 0.5rem;
+  --radius: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-full: 999px;
+
+  --container: 60rem;
+  --control-height: 2.75rem; /* 44 px touch target */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration: 160ms;
+
+  /* Colours: light theme */
+  --color-bg: #f5f6fb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f3f9;
+  --color-border: #dfe3ee;
+  --color-border-strong: #c3c9d9;
+  --color-text: #161a2b;
+  --color-text-muted: #4f5672;
+  --color-text-subtle: #5f6584;
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-soft: #eef0ff;
+  --color-primary-text: #3730a3;
+  --color-on-primary: #ffffff;
+  --color-success: #15803d;
+  --color-success-soft: #e8f7ee;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+  --color-warning: #92400e;
+  --color-warning-soft: #fef6e4;
+  --color-hero-from: #4f46e5;
+  --color-hero-to: #7c3aed;
+  --shadow-sm: 0 1px 2px rgb(22 26 43 / 0.06);
+  --shadow: 0 1px 3px rgb(22 26 43 / 0.06), 0 8px 24px rgb(22 26 43 / 0.06);
+  --focus-ring: 0 0 0 3px rgb(79 70 229 / 0.45);
+
+  color-scheme: light;
   font-family:
+    'Inter',
     system-ui,
     -apple-system,
     'Segoe UI',
@@ -7,13 +67,100 @@
     'Helvetica Neue',
     Arial,
     sans-serif;
-  line-height: 1.5;
-  color: #213547;
-  color-scheme: light;
+  font-size: 100%;
+  line-height: 1.55;
+  color: var(--color-text);
+  background: var(--color-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark theme: follows the OS unless the user picked light explicitly. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #0e1020;
+    --color-surface: #171a2e;
+    --color-surface-muted: #1f2340;
+    --color-border: #2d3256;
+    --color-border-strong: #424874;
+    --color-text: #eceefb;
+    --color-text-muted: #b4b9d6;
+    --color-text-subtle: #9298bb;
+    --color-primary: #818cf8;
+    --color-primary-hover: #a5b4fc;
+    --color-primary-soft: #252a52;
+    --color-primary-text: #c7cdfd;
+    --color-on-primary: #0e1020;
+    --color-success: #4ade80;
+    --color-success-soft: #13301f;
+    --color-danger: #fca5a5;
+    --color-danger-soft: #3a1717;
+    --color-warning: #fcd34d;
+    --color-warning-soft: #382a0d;
+    --color-hero-from: #3730a3;
+    --color-hero-to: #5b21b6;
+    --shadow-sm: none;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+    --focus-ring: 0 0 0 3px rgb(129 140 248 / 0.6);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #0e1020;
+  --color-surface: #171a2e;
+  --color-surface-muted: #1f2340;
+  --color-border: #2d3256;
+  --color-border-strong: #424874;
+  --color-text: #eceefb;
+  --color-text-muted: #b4b9d6;
+  --color-text-subtle: #9298bb;
+  --color-primary: #818cf8;
+  --color-primary-hover: #a5b4fc;
+  --color-primary-soft: #252a52;
+  --color-primary-text: #c7cdfd;
+  --color-on-primary: #0e1020;
+  --color-success: #4ade80;
+  --color-success-soft: #13301f;
+  --color-danger: #fca5a5;
+  --color-danger-soft: #3a1717;
+  --color-warning: #fcd34d;
+  --color-warning-soft: #382a0d;
+  --color-hero-from: #3730a3;
+  --color-hero-to: #5b21b6;
+  --shadow-sm: none;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  --focus-ring: 0 0 0 3px rgb(129 140 248 / 0.6);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+img,
+video,
+svg {
+  display: block;
+  max-width: 100%;
 }
 
 button,
@@ -21,10 +168,11 @@ input,
 select,
 textarea {
   font: inherit;
+  color: inherit;
 }
 
 :focus-visible {
-  outline: 3px solid #4c51bf;
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
@@ -34,5 +182,6 @@ textarea {
   *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

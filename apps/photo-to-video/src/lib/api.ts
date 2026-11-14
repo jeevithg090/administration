@@ -101,3 +101,13 @@ export async function waitForJob(
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
 }
+
+export interface ServerFeatures {
+  narration: boolean;
+}
+
+/** Which optional AI features the server has API keys for. */
+export async function getServerFeatures(): Promise<ServerFeatures> {
+  const { data } = await http.get<{ features: ServerFeatures }>('/api/config');
+  return data.features;
+}

@@ -100,13 +100,17 @@ export default function ClientVideoCreator({ files, duration }: ClientVideoCreat
   };
 
   return (
-    <div className="client-video-creator">
+    <section className="panel" aria-labelledby="browser-fallback-heading">
       <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} hidden />
-      <h3>Create the video in your browser instead</h3>
-      <p>
-        The server cannot render videos because FFmpeg is not installed. Your browser can record the
-        slideshow in real time and save it as a WebM file (no transitions or audio).
-      </p>
+      <div>
+        <h3 id="browser-fallback-heading" className="field-label">
+          Create the video in your browser instead
+        </h3>
+        <p className="field-hint">
+          The server can&apos;t render videos because FFmpeg isn&apos;t installed. Your browser can
+          record the slideshow in real time and save it as a WebM file (no transitions or audio).
+        </p>
+      </div>
 
       {processing && <ProgressBar value={progress} label="Recording video in browser" />}
       <ErrorMessage message={error} />
@@ -115,10 +119,11 @@ export default function ClientVideoCreator({ files, duration }: ClientVideoCreat
         type="button"
         onClick={createVideoInBrowser}
         disabled={processing || files.length === 0}
-        className="create-browser-video-button"
+        aria-busy={processing}
+        className="btn btn-secondary"
       >
         {processing ? 'Recording…' : 'Create video in browser'}
       </button>
-    </div>
+    </section>
   );
 }
