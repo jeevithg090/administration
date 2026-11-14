@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+*.tsbuildinfo
+coverage/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Runtime data written by the photo-to-video server
+apps/photo-to-video/server/uploads/
+apps/photo-to-video/server/videos/
+apps/photo-to-video/server/audio/
+apps/photo-to-video/server/temp/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+._*
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.sw?
