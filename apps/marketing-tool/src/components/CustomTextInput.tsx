@@ -1,93 +1,105 @@
-import React from 'react';
-import { Type } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 import { config } from '../config';
+import type { PostTypeId } from '../types';
+import Section from './Section';
 
 const MAX_LENGTH = 500;
+const SOFT_LIMIT = 450;
 
 interface CustomTextInputProps {
+  step: number;
   value: string;
   onChange: (value: string) => void;
-  postType: string;
+  postType: PostTypeId;
 }
 
-const CustomTextInput: React.FC<CustomTextInputProps> = ({ value, onChange, postType }) => {
-  const getPlaceholder = () => {
-    switch (postType) {
-      case 'advertisement':
-        return 'Enter your advertisement message... (e.g., "Admissions open for 2024-25 batch", "Join our Engineering program")';
-      case 'announcement':
-        return 'Enter your announcement... (e.g., "Campus reopening announcement", "New course launch")';
-      default:
-        return 'Optional subtitle, e.g. "Wishing everyone light and joy". Leave empty to use the festival description.';
-    }
-  };
+const COPY: Record<PostTypeId, { title: string; description: string; placeholder: string }> = {
+  advertisement: {
+    title: 'Write your advertisement',
+    description: 'This becomes the headline of the post.',
+    placeholder: 'e.g. "Admissions open for the 2026–27 batch. Apply now!"',
+  },
+  announcement: {
+    title: 'Write your announcement',
+    description: 'This becomes the headline of the post.',
+    placeholder: 'e.g. "Campus reopens on 3 June. Classes start at 9 am."',
+  },
+  event: {
+    title: 'Add a greeting',
+    description: 'Optional subtitle under the festival name. Leave empty to use its description.',
+    placeholder: 'e.g. "Wishing everyone light and joy"',
+  },
+};
 
-  const getLabel = () => {
-    switch (postType) {
-      case 'advertisement':
-        return 'Advertisement Message';
-      case 'announcement':
-        return 'Announcement Text';
-      default:
-        return 'Greeting Message (optional)';
-    }
-  };
+const TIPS: Record<PostTypeId, string[]> = {
+  advertisement: [
+    `Highlight what makes ${config.brandName} stand out`,
+    'Include a call to action, such as “Apply now”',
+    'Mention a specific programme or facility',
+  ],
+  announcement: [
+    'Lead with the key information',
+    'Include dates, times and places if relevant',
+    'Keep the tone clear and professional',
+  ],
+  event: ['Keep it warm and short', 'One sentence reads best on small screens'],
+};
+
+const CustomTextInput = ({ step, value, onChange, postType }: CustomTextInputProps) => {
+  const copy = COPY[postType];
+  const required = postType !== 'event';
+  const showRequiredHint = required && value.length > 0 && !value.trim();
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <div className="flex items-center space-x-2 mb-4">
-        <Type className="w-6 h-6 text-blue-600" aria-hidden="true" />
-        <h2 className="text-2xl font-bold text-gray-800">
-          <label htmlFor="custom-text">{getLabel()}</label>
-        </h2>
+    <Section
+      id="custom-text"
+      step={step}
+      title={
+        <label htmlFor="custom-text">
+          {copy.title}
+          {!required && <span className="ml-2 text-sm font-normal text-fg-subtle">optional</span>}
+        </label>
+      }
+      description={copy.description}
+    >
+      <textarea
+        id="custom-text"
+        maxLength={MAX_LENGTH}
+        required={required}
+        aria-describedby="custom-text-count custom-text-tips"
+        aria-invalid={showRequiredHint || undefined}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={copy.placeholder}
+        rows={3}
+        className="input py-3 resize-y min-h-24"
+      />
+
+      <div className="mt-2 flex flex-wrap justify-between gap-2 text-sm">
+        <span className={showRequiredHint ? 'text-danger-fg font-medium' : 'text-warn-fg'}>
+          {showRequiredHint
+            ? 'Enter some text, not just spaces.'
+            : value.length > SOFT_LIMIT
+              ? 'Shorter text is easier to read on social media.'
+              : ''}
+        </span>
+        <span id="custom-text-count" className="text-fg-subtle tabular-nums">
+          {value.length}/{MAX_LENGTH}
+        </span>
       </div>
 
-      <div className="space-y-4">
-        <textarea
-          id="custom-text"
-          maxLength={MAX_LENGTH}
-          aria-describedby="custom-text-count"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={getPlaceholder()}
-          rows={4}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-        />
-
-        <div className="flex justify-between items-center text-sm">
-          <span id="custom-text-count" className="text-gray-500">
-            {value.length}/{MAX_LENGTH} characters
-          </span>
-          {value.length > 450 && (
-            <span className="text-orange-500">
-              Keep it concise for better social media engagement
-            </span>
-          )}
-        </div>
-
-        <div className="bg-blue-50 rounded-lg p-4">
-          <h3 className="font-medium text-blue-800 mb-2">Writing Tips:</h3>
-          <ul className="text-sm text-blue-700 space-y-1">
-            {postType === 'advertisement' && (
-              <>
-                <li>• Highlight unique selling points of {config.brandName}</li>
-                <li>• Include a call-to-action (e.g., "Apply Now", "Learn More")</li>
-                <li>• Mention specific programs or facilities</li>
-              </>
-            )}
-            {postType === 'announcement' && (
-              <>
-                <li>• Be clear and direct with important information</li>
-                <li>• Include dates, times, and locations if relevant</li>
-                <li>• Use professional and informative tone</li>
-              </>
-            )}
-            <li>• Keep it engaging and easy to read</li>
-            <li>• Use emojis sparingly for better engagement</li>
+      <div id="custom-text-tips" className="notice-info mt-4">
+        <Lightbulb className="size-5 shrink-0" aria-hidden="true" />
+        <div>
+          <p className="font-semibold mb-1">Writing tips</p>
+          <ul className="list-disc pl-4 space-y-0.5">
+            {TIPS[postType].map((tip) => (
+              <li key={tip}>{tip}</li>
+            ))}
           </ul>
         </div>
       </div>
-    </div>
+    </Section>
   );
 };
 
