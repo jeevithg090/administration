@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { Loader2, Mic, Music, SkipForward, Wand2 } from 'lucide-react';
 import {
   addBackgroundMusic,
   errorMessage,
   generateAudio,
   generateScript,
+  getServerFeatures,
   mixNarration,
   waitForJob,
 } from '../lib/api';
-import { isSupportedAudioFile } from '../lib/format';
+import { formatFileSize, isSupportedAudioFile } from '../lib/format';
 import ErrorMessage from './ErrorMessage';
 import ProgressBar from './ProgressBar';
 
@@ -19,6 +21,8 @@ interface AudioProcessorProps {
 
 type AudioOption = 'background-music' | 'ai-dubbing';
 
+const MAX_DESCRIPTION = 1000;
+
 export default function AudioProcessor({ jobId, onAudioProcessed, onSkip }: AudioProcessorProps) {
   const [option, setOption] = useState<AudioOption | null>(null);
   const [musicFile, setMusicFile] = useState<File | null>(null);
@@ -27,9 +31,21 @@ export default function AudioProcessor({ jobId, onAudioProcessed, onSkip }: Audi
   const [progress, setProgress] = useState(0);
   const [step, setStep] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // null while loading; assume available if the check itself fails.
+  const [narrationAvailable, setNarrationAvailable] = useState<boolean | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  useEffect(() => {
+    let active = true;
+    getServerFeatures()
+      .then((features) => active && setNarrationAvailable(features.narration))
+      .catch(() => active && setNarrationAvailable(true));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const run = async (work: (signal: AbortSignal) => Promise<string>, fallback: string) => {
     setProcessing(true);
@@ -87,7 +103,7 @@ export default function AudioProcessor({ jobId, onAudioProcessed, onSkip }: Audi
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     if (file && !isSupportedAudioFile(file)) {
-      setError('Please choose an MP3, WAV, OGG, M4A or AAC file.');
+      setError('That file type isn’t supported. Choose an MP3, WAV, OGG, M4A or AAC file.');
       setMusicFile(null);
       event.target.value = '';
       return;
@@ -96,119 +112,169 @@ export default function AudioProcessor({ jobId, onAudioProcessed, onSkip }: Audi
     setMusicFile(file);
   };
 
+  const selectOption = (value: AudioOption) => {
+    setOption(value);
+    setError(null);
+  };
+
   if (processing) {
     return (
-      <section
-        className="audio-processor processing"
-        aria-labelledby="audio-heading"
-        aria-busy="true"
-      >
-        <h2 id="audio-heading">Adding audio to your video</h2>
-        <ProgressBar value={progress} label="Audio processing" />
-        <p className="progress-step" aria-live="polite">
-          {step}
-        </p>
+      <section className="card" aria-labelledby="audio-heading" aria-busy="true">
+        <div className="status-panel">
+          <span className="status-icon" aria-hidden="true">
+            <Loader2 size={26} className="spin" />
+          </span>
+          <h2 id="audio-heading" className="card-title" tabIndex={-1}>
+            Adding audio to your video
+          </h2>
+          <p aria-live="polite">{step}</p>
+          <ProgressBar value={progress} label="Audio processing" />
+        </div>
       </section>
     );
   }
 
+  const narrationDisabled = narrationAvailable === false;
+
   return (
-    <section className="audio-processor" aria-labelledby="audio-heading">
-      <h2 id="audio-heading">Add audio to your video</h2>
-      <p>Your slideshow is ready. Optionally add music or an AI-generated narration.</p>
+    <section className="card" aria-labelledby="audio-heading">
+      <div className="card-header">
+        <h2 id="audio-heading" tabIndex={-1}>
+          Add audio (optional)
+        </h2>
+        <p>Your slideshow is rendered. Add a soundtrack or a narrated voice-over, or skip ahead.</p>
+      </div>
 
-      <ErrorMessage message={error} />
-
-      <div className="audio-options">
-        <div className={`audio-option ${option === 'background-music' ? 'selected' : ''}`}>
-          <label className="option-header">
+      <div className="stack">
+        <fieldset className="choices">
+          <legend className="visually-hidden">Audio type</legend>
+          <label className="choice">
             <input
               type="radio"
               name="audioOption"
               value="background-music"
               checked={option === 'background-music'}
-              onChange={() => setOption('background-music')}
+              onChange={() => selectOption('background-music')}
             />
-            <span className="option-title">🎵 Background music</span>
+            <span className="choice-icon" aria-hidden="true">
+              <Music size={20} />
+            </span>
+            <span>
+              <span className="choice-title">Background music</span>
+              <span className="choice-desc">
+                Upload your own track. It loops if it is shorter than the video.
+              </span>
+            </span>
           </label>
-          <p>Add your own music track. It loops if shorter than the video.</p>
 
-          {option === 'background-music' && (
-            <div className="option-details">
-              <div className="file-upload">
-                <label htmlFor="music-file" className="file-label">
-                  Music file
-                </label>
-                <input
-                  id="music-file"
-                  type="file"
-                  accept=".mp3,.wav,.ogg,.m4a,.aac,audio/*"
-                  onChange={handleFileChange}
-                  className="file-input"
-                />
-                {musicFile && <div className="selected-file">Selected: {musicFile.name}</div>}
-              </div>
-              <button
-                type="button"
-                onClick={handleBackgroundMusic}
-                disabled={!musicFile}
-                className="process-button"
-              >
-                Add background music
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className={`audio-option ${option === 'ai-dubbing' ? 'selected' : ''}`}>
-          <label className="option-header">
+          <label className="choice">
             <input
               type="radio"
               name="audioOption"
               value="ai-dubbing"
               checked={option === 'ai-dubbing'}
-              onChange={() => setOption('ai-dubbing')}
+              onChange={() => selectOption('ai-dubbing')}
+              disabled={narrationDisabled}
+              aria-describedby={narrationDisabled ? 'narration-unavailable' : undefined}
             />
-            <span className="option-title">🎙️ AI narration</span>
+            <span className="choice-icon" aria-hidden="true">
+              <Mic size={20} />
+            </span>
+            <span>
+              <span className="choice-title">AI narration</span>
+              <span className="choice-desc">
+                Describe the slideshow; a script is written and read aloud for you.
+              </span>
+              {narrationDisabled && (
+                <span id="narration-unavailable" className="badge">
+                  Not configured on this server
+                </span>
+              )}
+            </span>
           </label>
-          <p>
-            Describe the slideshow and get a generated voice-over (requires API keys on the server).
-          </p>
+        </fieldset>
 
-          {option === 'ai-dubbing' && (
-            <div className="option-details">
-              <div className="description-input">
-                <label htmlFor="video-description">Describe your video</label>
-                <textarea
-                  id="video-description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="What is the slideshow about, what mood should it have, and what should the narration convey?"
-                  rows={4}
-                  maxLength={1000}
-                  className="description-textarea"
-                  aria-describedby="description-hint"
-                />
-                <small id="description-hint" className="input-hint">
-                  {description.length}/1000 characters
-                </small>
-              </div>
-              <button
-                type="button"
-                onClick={handleNarration}
-                disabled={!description.trim()}
-                className="process-button"
-              >
-                Generate narration
-              </button>
+        {narrationDisabled && (
+          <div className="alert alert-info">
+            <span>
+              AI narration needs <code>OPENROUTER_API_KEY</code> and <code>ELEVENLABS_API_KEY</code>{' '}
+              in the server&apos;s environment. Background music works without any keys.
+            </span>
+          </div>
+        )}
+
+        {option === 'background-music' && (
+          <div className="panel">
+            <div className="field">
+              <label htmlFor="music-file" className="field-label">
+                Music file
+              </label>
+              <input
+                id="music-file"
+                type="file"
+                accept=".mp3,.wav,.ogg,.m4a,.aac,audio/*"
+                onChange={handleFileChange}
+                className="input file-input"
+                aria-describedby="music-hint"
+              />
+              <small id="music-hint" className="field-hint">
+                {musicFile
+                  ? `${musicFile.name} · ${formatFileSize(musicFile.size)}`
+                  : 'MP3, WAV, OGG, M4A or AAC · up to 25 MB'}
+              </small>
             </div>
-          )}
-        </div>
+            <button
+              type="button"
+              onClick={handleBackgroundMusic}
+              disabled={!musicFile}
+              className="btn btn-primary"
+            >
+              <Music size={18} aria-hidden />
+              Add background music
+            </button>
+          </div>
+        )}
+
+        {option === 'ai-dubbing' && (
+          <div className="panel">
+            <div className="field">
+              <label htmlFor="video-description" className="field-label">
+                Describe your video
+              </label>
+              <textarea
+                id="video-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g. Highlights from our campus open day: the labs, the library and student projects. Upbeat and welcoming."
+                rows={4}
+                maxLength={MAX_DESCRIPTION}
+                className="textarea"
+                aria-describedby="description-hint"
+              />
+              <small id="description-hint" className="field-hint">
+                What it&apos;s about, the mood, and what the narration should say ·{' '}
+                {description.length}/{MAX_DESCRIPTION}
+              </small>
+            </div>
+            <button
+              type="button"
+              onClick={handleNarration}
+              disabled={!description.trim()}
+              className="btn btn-primary"
+            >
+              <Wand2 size={18} aria-hidden />
+              Generate narration
+            </button>
+          </div>
+        )}
+
+        <ErrorMessage title="Couldn't add audio" message={error} />
       </div>
 
-      <div className="action-buttons">
-        <button type="button" onClick={onSkip} className="skip-button">
-          Skip – use the video without audio
+      <div className="actions">
+        <button type="button" onClick={onSkip} className="btn btn-secondary">
+          Continue without audio
+          <SkipForward size={18} aria-hidden />
         </button>
       </div>
     </section>
