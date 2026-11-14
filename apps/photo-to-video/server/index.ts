@@ -16,6 +16,7 @@ const app = createApp({
   ai: createAiServices(config),
   corsOrigins: config.corsOrigins,
   clientDistDir: config.clientDistDir,
+  features: { narration: Boolean(config.openRouter.apiKey && config.elevenLabs.apiKey) },
 });
 
 app.listen(config.port, () => {

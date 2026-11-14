@@ -45,6 +45,25 @@ describe('basic routes', () => {
     expect(res.body).toEqual({ status: 'ok' });
   });
 
+  it('reports which optional features are available', async () => {
+    const res = await request(app).get('/api/config');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ features: { narration: true } });
+
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ptv-cfg-'));
+    try {
+      const noKeys = createApp({
+        dataDir: dir,
+        ai: { generateScript: vi.fn(), synthesizeSpeech: vi.fn() },
+        features: { narration: false },
+      });
+      const off = await request(noKeys).get('/api/config');
+      expect(off.body).toEqual({ features: { narration: false } });
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('stores uploads under server-generated names', async () => {
     const res = await request(app)
       .post('/api/upload')
