@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+package-lock.json
+apps/photo-to-video/server/uploads
+apps/photo-to-video/server/videos
+apps/photo-to-video/server/audio
