@@ -1,121 +1,139 @@
-import React, { useState } from 'react';
-import { Search, Filter } from 'lucide-react';
-import type { Festival } from '../types';
+import { useState } from 'react';
+import { Check, Filter, Search, SearchX } from 'lucide-react';
+import type { Festival, FestivalCategory } from '../types';
 import { indianFestivals } from '../data/festivals';
+import Section from './Section';
 
 interface FestivalSelectorProps {
   selectedFestival: Festival | null;
   onSelectFestival: (festival: Festival) => void;
 }
 
-const FestivalSelector: React.FC<FestivalSelectorProps> = ({
-  selectedFestival,
-  onSelectFestival,
-}) => {
+const CATEGORIES = ['all', 'religious', 'cultural', 'national', 'seasonal'] as const;
+
+const CATEGORY_STYLES: Record<FestivalCategory, string> = {
+  religious: 'bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-200',
+  cultural: 'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-200',
+  national: 'bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-200',
+  seasonal: 'bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-200',
+};
+
+const FestivalSelector = ({ selectedFestival, onSelectFestival }: FestivalSelectorProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<(typeof CATEGORIES)[number]>('all');
 
-  const categories = ['all', 'religious', 'cultural', 'national', 'seasonal'];
-
+  const term = searchTerm.trim().toLowerCase();
   const filteredFestivals = indianFestivals.filter((festival) => {
     const matchesSearch =
-      festival.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      festival.description.toLowerCase().includes(searchTerm.toLowerCase());
+      festival.name.toLowerCase().includes(term) ||
+      festival.description.toLowerCase().includes(term);
     const matchesCategory = selectedCategory === 'all' || festival.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Select Festival</h2>
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+  };
 
-      {/* Search and Filter */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+  return (
+    <Section
+      id="festival"
+      step={2}
+      title="Pick a festival"
+      description="Colours, motifs and wording are tailored to the occasion."
+    >
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1">
-          <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Search
+            className="size-5 absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle pointer-events-none"
+            aria-hidden="true"
+          />
           <input
             type="search"
             aria-label="Search festivals"
-            placeholder="Search festivals..."
+            placeholder="Search festivals…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="input pl-10"
           />
         </div>
-
-        <div className="relative">
-          <Filter className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <div className="relative sm:w-56">
+          <Filter
+            className="size-5 absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle pointer-events-none"
+            aria-hidden="true"
+          />
           <select
             aria-label="Filter by category"
             value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
+            onChange={(e) => setSelectedCategory(e.target.value as (typeof CATEGORIES)[number])}
+            className="input pl-10 pr-8"
           >
-            {categories.map((category) => (
+            {CATEGORIES.map((category) => (
               <option key={category} value={category}>
-                {category.charAt(0).toUpperCase() + category.slice(1)}
+                {category === 'all'
+                  ? 'All categories'
+                  : category.charAt(0).toUpperCase() + category.slice(1)}
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Festival Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto p-1">
-        {filteredFestivals.map((festival) => (
-          <button
-            type="button"
-            key={festival.id}
-            aria-pressed={selectedFestival?.id === festival.id}
-            onClick={() => onSelectFestival(festival)}
-            className={`p-4 rounded-lg border-2 transition-all duration-200 hover:shadow-lg text-left ${
-              selectedFestival?.id === festival.id
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 bg-white hover:border-gray-300'
-            }`}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-lg text-gray-800">{festival.name}</h3>
-              <span
-                className={`px-2 py-1 text-xs rounded-full ${
-                  festival.category === 'religious'
-                    ? 'bg-purple-100 text-purple-700'
-                    : festival.category === 'cultural'
-                      ? 'bg-green-100 text-green-700'
-                      : festival.category === 'national'
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-blue-100 text-blue-700'
-                }`}
+      <p className="sr-only" role="status" aria-live="polite">
+        {filteredFestivals.length} festival{filteredFestivals.length === 1 ? '' : 's'} shown
+      </p>
+
+      {filteredFestivals.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[26rem] overflow-y-auto p-1 -m-1">
+          {filteredFestivals.map((festival) => {
+            const selected = selectedFestival?.id === festival.id;
+            return (
+              <button
+                type="button"
+                key={festival.id}
+                aria-pressed={selected}
+                onClick={() => onSelectFestival(festival)}
+                className="option flex flex-col"
               >
-                {festival.category}
-              </span>
-            </div>
-
-            <p className="text-sm text-gray-600 mb-3">{festival.description}</p>
-
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">{festival.date}</span>
-              <div className="flex space-x-1">
-                {festival.colors.slice(0, 3).map((color, index) => (
-                  <span
-                    aria-hidden="true"
-                    key={index}
-                    className="block w-4 h-4 rounded-full border border-gray-200"
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-            </div>
+                <span className="flex items-start justify-between gap-2 mb-1.5 pr-7">
+                  <span className="font-semibold text-fg">{festival.name}</span>
+                  <span className={`chip capitalize ${CATEGORY_STYLES[festival.category]}`}>
+                    {festival.category}
+                  </span>
+                </span>
+                {selected && (
+                  <span className="check-dot" aria-hidden="true">
+                    <Check className="size-3.5" strokeWidth={3} />
+                  </span>
+                )}
+                <span className="text-sm text-fg-muted mb-3">{festival.description}</span>
+                <span className="mt-auto flex items-center justify-between gap-2">
+                  <span className="text-xs text-fg-subtle">{festival.date}</span>
+                  <span className="flex -space-x-1" aria-hidden="true">
+                    {festival.colors.slice(0, 3).map((color, index) => (
+                      <span
+                        key={index}
+                        className="block size-4 rounded-full ring-2 ring-surface"
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center text-center gap-2 py-10 rounded-xl border-2 border-dashed border-line">
+          <SearchX className="size-8 text-fg-subtle" aria-hidden="true" />
+          <p className="font-medium">No festivals match your search</p>
+          <button type="button" onClick={clearFilters} className="btn-ghost text-brand-fg">
+            Clear search and filters
           </button>
-        ))}
-      </div>
-
-      {filteredFestivals.length === 0 && (
-        <div className="text-center py-8 text-gray-500" role="status">
-          No festivals found matching your criteria.
         </div>
       )}
-    </div>
+    </Section>
   );
 };
 

@@ -1,63 +1,55 @@
-import React from 'react';
-import { Calendar, Megaphone, Bell } from 'lucide-react';
+import { Bell, Calendar, Check, Megaphone } from 'lucide-react';
 import { postTypes } from '../data/festivals';
 import type { PostTypeId } from '../types';
+import Section from './Section';
 
 interface PostTypeSelectorProps {
   selectedType: PostTypeId | null;
   onSelectType: (type: PostTypeId) => void;
 }
 
-const getIcon = (typeId: PostTypeId) => {
-  switch (typeId) {
-    case 'event':
-      return <Calendar className="w-6 h-6" />;
-    case 'advertisement':
-      return <Megaphone className="w-6 h-6" />;
-    case 'announcement':
-      return <Bell className="w-6 h-6" />;
-    default:
-      return <Calendar className="w-6 h-6" />;
-  }
+const ICONS: Record<PostTypeId, typeof Calendar> = {
+  event: Calendar,
+  advertisement: Megaphone,
+  announcement: Bell,
 };
 
-const PostTypeSelector: React.FC<PostTypeSelectorProps> = ({ selectedType, onSelectType }) => {
-  return (
-    <section className="bg-white rounded-lg shadow-md p-6 mb-6" aria-labelledby="post-type-heading">
-      <h2 id="post-type-heading" className="text-2xl font-bold text-gray-800 mb-4">
-        Choose Post Type
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {postTypes.map((type) => (
+const PostTypeSelector = ({ selectedType, onSelectType }: PostTypeSelectorProps) => (
+  <Section
+    id="post-type"
+    step={1}
+    title="Choose a post type"
+    description="What are you posting about?"
+  >
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {postTypes.map((type) => {
+        const Icon = ICONS[type.id];
+        const selected = selectedType === type.id;
+        return (
           <button
             type="button"
             key={type.id}
-            aria-pressed={selectedType === type.id}
+            aria-pressed={selected}
             onClick={() => onSelectType(type.id)}
-            className={`p-4 rounded-lg border-2 transition-all duration-200 hover:shadow-lg ${
-              selectedType === type.id
-                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-            }`}
+            className="option flex sm:flex-col items-center sm:items-start gap-3"
           >
-            <div className="flex flex-col items-center text-center space-y-3">
-              <div
-                className={`p-3 rounded-full ${
-                  selectedType === type.id ? 'bg-blue-100' : 'bg-gray-100'
-                }`}
-              >
-                {getIcon(type.id)}
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">{type.name}</h3>
-                <p className="text-sm opacity-75">{type.description}</p>
-              </div>
-            </div>
+            {selected && (
+              <span className="check-dot" aria-hidden="true">
+                <Check className="size-3.5" strokeWidth={3} />
+              </span>
+            )}
+            <span className="option-icon" aria-hidden="true">
+              <Icon className="size-5" />
+            </span>
+            <span className="min-w-0 pr-6 sm:pr-0">
+              <span className="block font-semibold text-fg">{type.name}</span>
+              <span className="block text-sm text-fg-muted">{type.description}</span>
+            </span>
           </button>
-        ))}
-      </div>
-    </section>
-  );
-};
+        );
+      })}
+    </div>
+  </Section>
+);
 
 export default PostTypeSelector;

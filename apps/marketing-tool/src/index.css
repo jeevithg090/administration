@@ -1,16 +1,83 @@
 @import 'tailwindcss';
 
+/* Dark mode follows `<html data-theme>`, which is set from the OS preference or the user's choice. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+ * Design tokens. Components use the semantic colours below (bg-surface,
+ * text-fg-muted, border-line, …) so the dark theme only redefines variables.
+ */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-canvas: #f4f6fb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1f4f9;
+  --color-line: #dde2ec;
+  --color-line-strong: #c2c9d8;
+  --color-fg: #141a2b;
+  --color-fg-muted: #4b5470;
+  --color-fg-subtle: #5d6582;
+  --color-brand: #2563eb;
+  --color-brand-hover: #1d4ed8;
+  --color-brand-soft: #eaf1ff;
+  --color-brand-fg: #1e40af;
+  --color-on-brand: #ffffff;
+  --color-accent: #7c3aed;
+  --color-success-soft: #e7f6ec;
+  --color-success-fg: #166534;
+  --color-warn-soft: #fff6e0;
+  --color-warn-fg: #8a4b06;
+  --color-danger-soft: #fdecec;
+  --color-danger-fg: #b42318;
+
+  --shadow-card: 0 1px 2px rgb(20 26 43 / 0.05), 0 6px 20px rgb(20 26 43 / 0.05);
+  --animate-fade-in: fade-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
 }
 
 @layer base {
+  :root[data-theme='dark'] {
+    --color-canvas: #0d1120;
+    --color-surface: #161b2e;
+    --color-surface-muted: #1e2440;
+    --color-line: #2b3354;
+    --color-line-strong: #424b73;
+    --color-fg: #eceffa;
+    --color-fg-muted: #b3bad5;
+    --color-fg-subtle: #9aa1c0;
+    --color-brand: #7aa2ff;
+    --color-brand-hover: #a3bfff;
+    --color-brand-soft: #1f2a52;
+    --color-brand-fg: #c4d4ff;
+    --color-on-brand: #0d1120;
+    --color-accent: #a78bfa;
+    --color-success-soft: #12301e;
+    --color-success-fg: #86efac;
+    --color-warn-soft: #372a0c;
+    --color-warn-fg: #fcd34d;
+    --color-danger-soft: #3a1616;
+    --color-danger-fg: #fca5a5;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+    color-scheme: dark;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
   body {
-    @apply bg-slate-100 text-gray-800 antialiased;
+    @apply bg-canvas text-fg antialiased;
   }
 
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-600;
+    @apply outline-2 outline-offset-2 outline-brand;
   }
 
   button:not(:disabled),
@@ -19,11 +86,116 @@
   }
 }
 
+@layer components {
+  .card {
+    @apply bg-surface border border-line rounded-2xl p-5 sm:p-6 animate-fade-in;
+    box-shadow: var(--shadow-card);
+  }
+
+  .section-heading {
+    @apply flex items-center gap-3 text-lg sm:text-xl font-semibold tracking-tight text-fg;
+  }
+
+  .step-badge {
+    @apply inline-grid place-items-center size-7 shrink-0 rounded-full bg-brand-soft text-brand-fg text-sm font-bold;
+  }
+
+  .section-desc {
+    @apply mt-1 mb-5 text-fg-muted;
+  }
+
+  .btn,
+  .btn-primary,
+  .btn-gradient,
+  .btn-secondary,
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 min-h-11 px-5 rounded-xl font-semibold whitespace-nowrap
+      transition-[background-color,border-color,color,box-shadow,transform] duration-150
+      active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 disabled:active:translate-y-0;
+  }
+
+  .btn-primary {
+    @apply bg-brand text-on-brand shadow-sm hover:enabled:bg-brand-hover;
+  }
+
+  .btn-gradient {
+    @apply text-white bg-linear-to-r from-blue-600 to-violet-600 shadow-md
+      hover:enabled:from-blue-700 hover:enabled:to-violet-700 hover:enabled:shadow-lg;
+  }
+
+  .btn-secondary {
+    @apply bg-surface border border-line-strong text-fg hover:enabled:bg-surface-muted;
+  }
+
+  .btn-ghost {
+    @apply px-3 text-fg-muted hover:enabled:bg-surface-muted hover:enabled:text-fg;
+  }
+
+  /* Selectable tile: pair with aria-pressed. */
+  .option {
+    @apply relative rounded-xl border-2 border-line bg-surface p-4 text-left
+      transition-[border-color,background-color,box-shadow] duration-150
+      hover:border-line-strong hover:shadow-sm
+      aria-pressed:border-brand aria-pressed:bg-brand-soft;
+  }
+
+  .option-icon {
+    @apply inline-grid place-items-center size-10 rounded-lg bg-surface-muted text-fg-muted
+      transition-colors duration-150;
+  }
+
+  .option[aria-pressed='true'] .option-icon {
+    @apply bg-brand text-on-brand;
+  }
+
+  .check-dot {
+    @apply absolute top-3 right-3 grid place-items-center size-5 rounded-full bg-brand text-on-brand;
+  }
+
+  .field-label {
+    @apply block text-sm font-semibold text-fg mb-2;
+  }
+
+  .input {
+    @apply w-full min-h-11 rounded-lg border border-line-strong bg-surface px-3 text-fg
+      placeholder:text-fg-subtle transition-[border-color,box-shadow] duration-150
+      hover:border-fg-subtle focus-visible:outline-none focus-visible:border-brand
+      focus-visible:ring-3 focus-visible:ring-brand/35;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+
+  .notice-warn,
+  .notice-error,
+  .notice-info {
+    @apply flex gap-3 rounded-xl border p-4 text-sm;
+  }
+
+  .notice-warn {
+    @apply bg-warn-soft text-warn-fg border-warn-fg/25;
+  }
+
+  .notice-error {
+    @apply bg-danger-soft text-danger-fg border-danger-fg/25;
+  }
+
+  .notice-info {
+    @apply bg-brand-soft text-brand-fg border-brand/25;
+  }
+
+  .skeleton {
+    @apply rounded-lg bg-surface-muted animate-pulse;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
