@@ -36,6 +36,8 @@ export interface AppOptions {
   clientDistDir?: string;
   /** Override for tests; defaults to the real FFmpeg runner. */
   ffmpeg?: typeof runFfmpeg;
+  /** Which optional AI features have API keys configured (reported to the UI). */
+  features?: { narration: boolean };
 }
 
 class HttpError extends Error {
@@ -78,7 +80,7 @@ function createUploader(
 }
 
 export function createApp(options: AppOptions) {
-  const { ai, corsOrigins = [], clientDistDir } = options;
+  const { ai, corsOrigins = [], clientDistDir, features = { narration: true } } = options;
   const ffmpeg = options.ffmpeg ?? runFfmpeg;
 
   const uploadsDir = ensureDir(path.join(options.dataDir, 'uploads'));
@@ -114,6 +116,11 @@ export function createApp(options: AppOptions) {
 
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
+  });
+
+  // Lets the UI hide or explain features the server cannot provide.
+  app.get('/api/config', (_req, res) => {
+    res.json({ features });
   });
 
   app.post('/api/upload', imageUpload.array('images', MAX_IMAGES), (req, res) => {
